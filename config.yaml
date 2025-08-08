@@ -1,0 +1,43 @@
+website: "https://www.github.com"
+competitors:
+  - "https://www.gitlab.com"
+locations:
+  - "United States"
+  - "India"
+language: "en"
+seeds:
+  - "workflow automation"
+  - "task management ai"
+max_keywords: 2000
+filters:
+  min_search_volume: 100        # use 0 to not filter
+  max_cpc: 20.0
+enrichers:
+  use_wordstream: true
+  use_serpapi: false
+  serpapi_key: ""
+llm:
+  provider: "openai"
+  model: "gpt-4o-mini"
+  max_tokens: 800
+gemini:
+  api_key: "YOUR_GEMINI_API_KEY_HERE"  # Get from: https://makersuite.google.com/app/apikey
+  model: "gemini-2.0-flash-exp"
+  max_tokens: 8192
+export:
+  csv: true
+  json: true
+  googleads_json: false
+output_dir: "./outputs"
+cache_dir: "./cache"
+logging:
+  level: "INFO"
+# Budget & Campaign Settings
+budget:
+  total_monthly: 10000  # Total monthly budget in USD
+  conversion_rate: 0.02  # Expected conversion rate (2%)
+  target_roas: 4.0      # Target return on ad spend
+business:
+  industry: "software"
+  description: "AI-powered workflow automation platform"
+  target_audience: ["business professionals", "tech teams", "productivity enthusiasts"]
