@@ -1,36 +1,36 @@
-# 🚀 AI-Powered SEM Keyword Research Platform
+#  AI-Powered SEM Keyword Research Platform
 
 **Enterprise-grade keyword research and competitive intelligence platform** powered by advanced NLP, semantic clustering, and Google Gemini AI.
 
 Transform any website into a complete Google Ads campaign strategy with competitor analysis, budget optimization, and performance forecasting.
 
-## 🎯 Key Features
+##  Key Features
 
 ### **Core Intelligence**
-- 🕵️ **Competitor Analysis** - Deep website intelligence with Gemini AI
-- 💰 **Budget Optimization** - Smart allocation across Search/Shopping/PMax campaigns  
-- 📊 **Performance Forecasting** - ROAS predictions and conversion estimates
-- 🎯 **Intent Classification** - Transactional vs informational keyword categorization
+-  **Competitor Analysis** - Deep website intelligence with Gemini AI
+-  **Budget Optimization** - Smart allocation across Search/Shopping/PMax campaigns  
+-  **Performance Forecasting** - ROAS predictions and conversion estimates
+-  **Intent Classification** - Transactional vs informational keyword categorization
 
 ### **Advanced NLP Pipeline**
-- 🧠 **Semantic Clustering** - Groups related keywords using Sentence-BERT embeddings
-- 🔍 **Multi-source Expansion** - WordStream + Google Autocomplete + NER + KeyBERT
-- 🎨 **Smart Deduplication** - Fuzzy matching removes near-duplicates
-- 📈 **Multi-factor Scoring** - Volume + CPC + Intent + Competition analysis
+-  **Semantic Clustering** - Groups related keywords using Sentence-BERT embeddings
+-  **Multi-source Expansion** - WordStream + Google Autocomplete + NER + KeyBERT
+-  **Smart Deduplication** - Fuzzy matching removes near-duplicates
+-  **Multi-factor Scoring** - Volume + CPC + Intent + Competition analysis
 
 ### **Professional Outputs**
-- 📋 **Google Ads Ready CSV** - Import directly into Google Ads Editor
-- 📊 **Complete JSON Dataset** - All keyword data with analytics
-- 📝 **Competitor Intelligence Reports** - Strategic insights in markdown
-- 💡 **Performance Max Themes** - Asset group suggestions with copy
-- 🎯 **Budget Allocation Reports** - ROI-optimized spend recommendations
+-  **Google Ads Ready CSV** - Import directly into Google Ads Editor
+-  **Complete JSON Dataset** - All keyword data with analytics
+-  **Competitor Intelligence Reports** - Strategic insights in markdown
+-  **Performance Max Themes** - Asset group suggestions with copy
+-  **Budget Allocation Reports** - ROI-optimized spend recommendations
 
 ## 🚀 Quick Start (5 Minutes)
 
 ### **Prerequisites**
-- ✅ **Python 3.10+** (Download from [python.org](https://python.org))
-- ✅ **Git** (For cloning - optional)
-- ✅ **8GB+ RAM** (For NLP models)
+-  **Python 3.10+** (Download from [python.org](https://python.org))
+-  **Git** (For cloning - optional)
+-  **8GB+ RAM** (For NLP models)
 
 ### **Step 1: Environment Setup**
 ```bash
@@ -114,19 +114,19 @@ python run.py --config config.yaml --dry-run
 python run.py --config config.yaml --debug
 ```
 
-## 📊 What You Get (Sample Output)
+##  What You Get (Sample Output)
 
-### **🎯 Professional Reports Generated:**
+### ** Professional Reports Generated:**
 ```
 outputs/run-20250808-094037/
-├── 📋 search_adgroups.csv          # Google Ads ready keywords
-├── 📊 keyword_data.json            # Complete dataset with analytics  
-├── 🕵️ competitor_analysis.md       # Strategic competitor intelligence
-├── 💰 budget_optimization.md       # ROI-focused budget recommendations
-└── 🎨 pmax_themes.md              # Performance Max asset themes
+├──  search_adgroups.csv          # Google Ads ready keywords
+├──  keyword_data.json            # Complete dataset with analytics  
+├──  competitor_analysis.md       # Strategic competitor intelligence
+├──  budget_optimization.md       # ROI-focused budget recommendations
+└──  pmax_themes.md              # Performance Max asset themes
 ```
 
-### **📋 Sample Keywords Output (What Employers See):**
+### ** Sample Keywords Output (What Employers See):**
 
 **File: `search_adgroups.csv` (Google Ads Ready)**
 ```csv
@@ -144,23 +144,23 @@ Competitor Terms,competitor alternative,transactional,phrase,800,2.10,5.20,0.82,
 - ✅ **Cost estimates** - CPC ranges for budget planning
 - ✅ **Competition analysis** - How difficult each keyword is to rank for
 
-### **🕵️ Sample Competitor Analysis:**
+### ** Sample Competitor Analysis:**
 ```markdown
 ## Competitor: GitLab
-### 🎯 Value Propositions:
+###  Value Propositions:
 - Complete DevOps platform
 - Built-in CI/CD pipelines  
 - Security-first approach
 
-### 🔍 Keyword Opportunities:
+###  Keyword Opportunities:
 - "gitlab alternative"
 - "devops automation platform"
 - "enterprise git hosting"
 ```
 
-### **💰 Sample Budget Optimization:**
+### ** Sample Budget Optimization:**
 ```markdown
-## 🎯 Recommended Budget Allocation
+##  Recommended Budget Allocation
 ### Search Campaign: $5,000 (50%)
 - High-intent keywords with precise targeting
 
@@ -170,13 +170,13 @@ Competitor Terms,competitor alternative,transactional,phrase,800,2.10,5.20,0.82,
 ### Performance Max: $2,000 (20%)
 - Broad reach across Google properties
 
-## 📈 Performance Forecast
+##  Performance Forecast
 - Estimated Clicks: 4,000
 - Estimated Conversions: 80  
 - Estimated ROAS: 4.0x
 ```
 
-## ⚠️ Common Setup Issues & Solutions
+##  Common Setup Issues & Solutions
 
 ### **Issue 1: Python Version**
 ```bash
@@ -309,13 +309,13 @@ logging:
   level: "INFO"
 ```
 
-## 🚀 Ready for Production
+##  Ready for Production
 
 This system is **enterprise-ready** with:
-- ✅ **Error handling** - Graceful failures and retries
-- ✅ **Caching system** - Avoids redundant API calls  
-- ✅ **Rate limiting** - Respects service limits
-- ✅ **Structured logging** - Full audit trail
-- ✅ **Modular design** - Easy to extend and maintain
+-  **Error handling** - Graceful failures and retries
+-  **Caching system** - Avoids redundant API calls  
+-  **Rate limiting** - Respects service limits
+-  **Structured logging** - Full audit trail
+-  **Modular design** - Easy to extend and maintain
 
 **Perfect for agencies, consultants, and businesses needing professional SEM intelligence.** 🎯
