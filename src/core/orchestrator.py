@@ -52,10 +52,16 @@ class PipelineOrchestrator:
         
         # Initialize Gemini client for advanced features
         try:
-            if hasattr(config, 'gemini') and hasattr(config.gemini, 'api_key') and config.gemini.api_key:
-                self.gemini_client = GeminiClient(config.gemini.api_key, config.gemini.model)
+            import os
+            # Check environment variable first, then config.yaml
+            gemini_key = os.getenv('GEMINI_API_KEY') or (config.gemini.api_key if hasattr(config, 'gemini') and hasattr(config.gemini, 'api_key') else None)
+            
+            if gemini_key and gemini_key != "YOUR_GEMINI_API_KEY_HERE":
+                self.gemini_client = GeminiClient(gemini_key, config.gemini.model)
+                self.logger.info("Initialized Gemini client from environment/config")
             else:
                 self.gemini_client = None
+                self.logger.info("Gemini API key not found. Competitor analysis and budget optimization will be skipped.")
         except Exception as e:
             self.logger.warning(f"Failed to initialize Gemini client: {e}")
             self.gemini_client = None

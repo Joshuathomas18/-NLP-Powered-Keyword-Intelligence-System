@@ -2,10 +2,10 @@
 
 import json
 from typing import List, Dict, Optional
-from openai import OpenAI
 import os
 
 from ..utils.logging import get_logger
+from ..llm.gemini_client import GeminiClient
 
 
 class IntentClassifier:
@@ -20,13 +20,35 @@ class IntentClassifier:
         self.logger = get_logger('IntentClassifier')
         self.config = llm_config
         
-        # Initialize OpenAI client
-        api_key = os.getenv('OPENAI_API_KEY')
-        if not api_key:
-            self.logger.warning("No OpenAI API key found. Set OPENAI_API_KEY environment variable.")
-            self.client = None
+        # Initialize Gemini client (preferred) or OpenAI
+        gemini_key = os.getenv('GEMINI_API_KEY')
+        openai_key = os.getenv('OPENAI_API_KEY')
+        
+        # Try Gemini first (free, better for this use case)
+        if gemini_key and gemini_key != "YOUR_GEMINI_API_KEY_HERE":
+            try:
+                self.client = GeminiClient(gemini_key, "gemini-2.0-flash-exp")
+                self.client_type = "gemini"
+                self.logger.info("Using Gemini for intent classification")
+            except Exception as e:
+                self.logger.warning(f"Failed to initialize Gemini: {e}")
+                self.client = None
+                self.client_type = None
+        # Fallback to OpenAI if available
+        elif openai_key:
+            try:
+                from openai import OpenAI
+                self.client = OpenAI(api_key=openai_key)
+                self.client_type = "openai"
+                self.logger.info("Using OpenAI for intent classification")
+            except Exception as e:
+                self.logger.warning(f"Failed to initialize OpenAI: {e}")
+                self.client = None
+                self.client_type = None
         else:
-            self.client = OpenAI(api_key=api_key)
+            self.logger.warning("No LLM API key found. Using rule-based classification.")
+            self.client = None
+            self.client_type = None
     
     def classify_keywords(self, keywords: List[Dict], batch_size: int = 20) -> List[Dict]:
         """Classify intent for a list of keywords.
@@ -60,19 +82,31 @@ class IntentClassifier:
             keyword_list = [kw['keyword'] for kw in keyword_batch]
             prompt = self._build_classification_prompt(keyword_list)
             
-            # Call LLM
-            response = self.client.chat.completions.create(
-                model=self.config.get('model', 'gpt-4o-mini'),
-                messages=[
-                    {"role": "system", "content": self._get_system_prompt()},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=self.config.get('max_tokens', 800),
-                temperature=0.1  # Low temperature for consistent results
-            )
+            # Call LLM (Gemini or OpenAI)
+            if self.client_type == "gemini":
+                # Use Gemini
+                full_prompt = f"{self._get_system_prompt()}\n\n{prompt}"
+                response_text = self.client.generate_content(
+                    full_prompt,
+                    max_tokens=self.config.get('max_tokens', 800),
+                    temperature=0.1
+                )
+            elif self.client_type == "openai":
+                # Use OpenAI
+                response = self.client.chat.completions.create(
+                    model=self.config.get('model', 'gpt-4o-mini'),
+                    messages=[
+                        {"role": "system", "content": self._get_system_prompt()},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=self.config.get('max_tokens', 800),
+                    temperature=0.1
+                )
+                response_text = response.choices[0].message.content.strip()
+            else:
+                return self._fallback_classification(keyword_batch)
             
             # Parse response
-            response_text = response.choices[0].message.content.strip()
             classifications = self._parse_llm_response(response_text, keyword_batch)
             
             return classifications

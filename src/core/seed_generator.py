@@ -68,14 +68,34 @@ class SeedGenerator:
     
     def _init_llm_client(self):
         """Initialize LLM client if API key available."""
-        if OpenAI:
-            api_key = os.getenv('OPENAI_API_KEY')
-            if api_key:
-                try:
-                    self.openai_client = OpenAI(api_key=api_key)
-                    self.logger.info("Initialized OpenAI client")
-                except Exception as e:
-                    self.logger.warning(f"Failed to initialize OpenAI client: {e}")
+        gemini_key = os.getenv('GEMINI_API_KEY')
+        openai_key = os.getenv('OPENAI_API_KEY')
+        
+        # Try Gemini first (free, better for this use case)
+        if gemini_key and gemini_key != "YOUR_GEMINI_API_KEY_HERE":
+            try:
+                from ..llm.gemini_client import GeminiClient
+                self.gemini_client = GeminiClient(gemini_key, "gemini-2.0-flash-exp")
+                self.client_type = "gemini"
+                self.logger.info("Initialized Gemini client for seed expansion")
+            except Exception as e:
+                self.logger.warning(f"Failed to initialize Gemini client: {e}")
+                self.gemini_client = None
+                self.client_type = None
+        # Fallback to OpenAI if available
+        elif OpenAI and openai_key:
+            try:
+                self.openai_client = OpenAI(api_key=openai_key)
+                self.client_type = "openai"
+                self.logger.info("Initialized OpenAI client")
+            except Exception as e:
+                self.logger.warning(f"Failed to initialize OpenAI client: {e}")
+                self.openai_client = None
+                self.client_type = None
+        else:
+            self.openai_client = None
+            self.gemini_client = None
+            self.client_type = None
     
     def generate_seeds(self, site_contents: List[Dict], manual_seeds: List[str] = None) -> List[str]:
         """Generate seed keywords from site content and manual seeds using advanced NLP.
@@ -122,7 +142,7 @@ class SeedGenerator:
                 seeds.update(content_seeds)
         
         # Expand seeds with LLM if available
-        if self.openai_client and len(seeds) > 5:
+        if (self.gemini_client or self.openai_client) and len(seeds) > 5:
             llm_seeds = self._expand_with_llm(list(seeds)[:20], combined_content)
             seeds.update(llm_seeds)
             self.logger.info(f"Added {len(llm_seeds)} LLM-expanded seeds")
@@ -209,9 +229,24 @@ class SeedGenerator:
         try:
             keywords = self.yake_extractor.extract_keywords(content)
             
-            for score, keyword in keywords[:max_seeds]:
-                if score < 0.5 and self._is_valid_seed(keyword):  # YAKE uses lower scores for better keywords
-                    seeds.add(keyword.lower())
+            for item in keywords[:max_seeds]:
+                # Handle both tuple and list formats from YAKE
+                if isinstance(item, (tuple, list)) and len(item) >= 2:
+                    keyword = str(item[1]).strip() if len(item) > 1 else str(item[0]).strip()
+                    score = item[0] if len(item) > 0 else 1.0
+                    
+                    # Ensure score is numeric for comparison
+                    try:
+                        score = float(score) if score is not None else 1.0
+                    except (ValueError, TypeError):
+                        score = 1.0
+                    
+                    if score < 0.5 and self._is_valid_seed(keyword):  # YAKE uses lower scores for better keywords
+                        seeds.add(keyword.lower().strip())
+                elif isinstance(item, str):
+                    # Handle case where YAKE returns just keywords
+                    if self._is_valid_seed(item):
+                        seeds.add(item.lower().strip())
                     
         except Exception as e:
             self.logger.warning(f"YAKE extraction failed: {e}")
@@ -241,17 +276,27 @@ Generate semantically related keywords that potential customers might search for
 
 Return as a simple comma-separated list of keywords (2-4 words each)."""
 
-            response = self.openai_client.chat.completions.create(
-                model=self.llm_config.get('model', 'gpt-4o-mini'),
-                messages=[
-                    {"role": "system", "content": "You are a keyword research expert helping generate relevant search terms for Google Ads campaigns."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=self.llm_config.get('max_tokens', 400),
-                temperature=0.3
-            )
-            
-            response_text = response.choices[0].message.content.strip()
+            # Use Gemini or OpenAI
+            if self.client_type == "gemini" and self.gemini_client:
+                full_prompt = f"{system_prompt}\n\n{prompt}"
+                response_text = self.gemini_client.generate_content(
+                    full_prompt,
+                    max_tokens=800,
+                    temperature=0.3
+                )
+            elif self.client_type == "openai" and self.openai_client:
+                response = self.openai_client.chat.completions.create(
+                    model=self.llm_config.get('model', 'gpt-4o-mini'),
+                    messages=[
+                        {"role": "system", "content": "You are a keyword research expert helping generate relevant search terms for Google Ads campaigns."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=self.llm_config.get('max_tokens', 400),
+                    temperature=0.3
+                )
+                response_text = response.choices[0].message.content.strip()
+            else:
+                return seeds  # Return original seeds if no LLM available
             
             # Parse LLM response
             llm_keywords = [kw.strip().lower() for kw in response_text.split(',')]

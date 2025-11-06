@@ -2,11 +2,11 @@
 
 import json
 from typing import List, Dict, Optional
-from openai import OpenAI
 import os
 import re
 
 from ..utils.logging import get_logger
+from ..llm.gemini_client import GeminiClient
 
 
 class AdGroupNamer:
@@ -21,13 +21,35 @@ class AdGroupNamer:
         self.logger = get_logger('AdGroupNamer')
         self.config = llm_config
         
-        # Initialize OpenAI client
-        api_key = os.getenv('OPENAI_API_KEY')
-        if not api_key:
-            self.logger.warning("No OpenAI API key found. Using fallback naming.")
-            self.client = None
+        # Initialize Gemini client (preferred) or OpenAI
+        gemini_key = os.getenv('GEMINI_API_KEY')
+        openai_key = os.getenv('OPENAI_API_KEY')
+        
+        # Try Gemini first (free, better for this use case)
+        if gemini_key and gemini_key != "YOUR_GEMINI_API_KEY_HERE":
+            try:
+                self.client = GeminiClient(gemini_key, "gemini-2.0-flash-exp")
+                self.client_type = "gemini"
+                self.logger.info("Using Gemini for ad group naming")
+            except Exception as e:
+                self.logger.warning(f"Failed to initialize Gemini: {e}")
+                self.client = None
+                self.client_type = None
+        # Fallback to OpenAI if available
+        elif openai_key:
+            try:
+                from openai import OpenAI
+                self.client = OpenAI(api_key=openai_key)
+                self.client_type = "openai"
+                self.logger.info("Using OpenAI for ad group naming")
+            except Exception as e:
+                self.logger.warning(f"Failed to initialize OpenAI: {e}")
+                self.client = None
+                self.client_type = None
         else:
-            self.client = OpenAI(api_key=api_key)
+            self.logger.warning("No LLM API key found. Using fallback naming.")
+            self.client = None
+            self.client_type = None
     
     def generate_ad_group_names(self, clusters: List[Dict], business_context: str = "") -> List[Dict]:
         """Generate semantic names for ad groups based on keyword clusters.
@@ -70,17 +92,28 @@ class AdGroupNamer:
             
             prompt = self._build_naming_prompt(sample_keywords, dominant_intent, business_context)
             
-            response = self.client.chat.completions.create(
-                model=self.config.get('model', 'gpt-4o-mini'),
-                messages=[
-                    {"role": "system", "content": self._get_naming_system_prompt()},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=150,
-                temperature=0.3  # Slightly higher for creativity
-            )
-            
-            response_text = response.choices[0].message.content.strip()
+            # Use Gemini or OpenAI
+            if self.client_type == "gemini":
+                full_prompt = f"{self._get_naming_system_prompt()}\n\n{prompt}"
+                response_text = self.client.generate_content(
+                    full_prompt,
+                    max_tokens=150,
+                    temperature=0.3
+                )
+                return response_text.strip()
+            elif self.client_type == "openai":
+                response = self.client.chat.completions.create(
+                    model=self.config.get('model', 'gpt-4o-mini'),
+                    messages=[
+                        {"role": "system", "content": self._get_naming_system_prompt()},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=150,
+                    temperature=0.3  # Slightly higher for creativity
+                )
+                response_text = response.choices[0].message.content.strip()
+            else:
+                return self._generate_rule_based_name(cluster)
             
             # Parse response to extract clean name
             ad_group_name = self._parse_naming_response(response_text)
@@ -288,17 +321,27 @@ Generate the following ad assets:
 
 Return as JSON with arrays for each asset type."""
         
-        response = self.client.chat.completions.create(
-            model=self.config.get('model', 'gpt-4o-mini'),
-            messages=[
-                {"role": "system", "content": "You are a Google Ads copywriter expert. Create compelling ad copy that follows Google Ads policies and character limits."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=800,
-            temperature=0.4
-        )
-        
-        response_text = response.choices[0].message.content.strip()
+        # Use Gemini or OpenAI
+        if self.client_type == "gemini":
+            full_prompt = f"You are a Google Ads copywriter expert. Create compelling ad copy that follows Google Ads policies and character limits.\n\n{prompt}"
+            response_text = self.client.generate_content(
+                full_prompt,
+                max_tokens=2000,
+                temperature=0.4
+            )
+        elif self.client_type == "openai":
+            response = self.client.chat.completions.create(
+                model=self.config.get('model', 'gpt-4o-mini'),
+                messages=[
+                    {"role": "system", "content": "You are a Google Ads copywriter expert. Create compelling ad copy that follows Google Ads policies and character limits."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=2000,
+                temperature=0.4
+            )
+            response_text = response.choices[0].message.content.strip()
+        else:
+            return self._fallback_pmax_theme(cluster, business_context)
         
         try:
             # Try to parse JSON response
